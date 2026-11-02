@@ -30,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole | null>(null);
   const [isBypass, setIsBypass] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Id of the user whose role lookup has finished; routes wait for it before deciding access.
+  const [roleUserId, setRoleUserId] = useState<string | null>(null);
 
   const fetchRole = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -39,12 +41,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .order('role', { ascending: true });
     if (error || !data?.length) {
       setRole(null);
+      setRoleUserId(userId);
       return;
     }
     // Highest privilege wins: master > admin > funcionario
     const priority: AppRole[] = ['master', 'admin', 'funcionario'];
     const found = priority.find((r) => data.some((d) => d.role === r));
     setRole(found ?? 'funcionario');
+    setRoleUserId(userId);
   }, []);
 
   useEffect(() => {
@@ -73,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (!localStorage.getItem(BYPASS_KEY)) {
         setUser(null);
         setRole(null);
+        setRoleUserId(null);
       }
     });
 
@@ -128,13 +133,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(BYPASS_KEY);
     setIsBypass(false);
     setRole(null);
+    setRoleUserId(null);
     setUser(null);
     await supabase.auth.signOut();
   }, []);
 
+  const roleLoading = !!user && !isBypass && roleUserId !== user.id;
+
   return (
     <AuthContext.Provider
-      value={{ user, session, role, loading, isBypass, signIn, signUp, signOut }}
+      value={{ user, session, role, loading: loading || roleLoading, isBypass, signIn, signUp, signOut }}
     >
       {children}
     </AuthContext.Provider>
