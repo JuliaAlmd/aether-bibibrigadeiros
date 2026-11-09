@@ -66,14 +66,13 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
-  onShowObject?: (title: string, className: string, data: Record<string, any>) => void;
   produto?: ProdutoRow | null;
 }
 
 const fmtBRL = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(n) ? n : 0);
 
-export const ProdutoDialog = ({ open, onOpenChange, onSaved, onShowObject, produto }: Props) => {
+export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) => {
   const { user, isBypass } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categorias, setCategorias] = useState<{ id: number; nome: string }[]>([]);
@@ -206,12 +205,10 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, onShowObject, produ
     if (isEdit && produto) {
       const { error } = await supabase.from('produtos').update(payload).eq('id', produto.id);
       if (error) { setIsSubmitting(false); toast.error('Erro ao salvar', { description: error.message }); return; }
-      onShowObject?.('Produto Atualizado', 'Produto', { id: produto.id, ...payload });
     } else {
       const { data: inserted, error } = await supabase.from('produtos').insert(payload).select().single();
       if (error) { setIsSubmitting(false); toast.error('Erro ao salvar', { description: error.message }); return; }
       savedId = (inserted as any)?.id;
-      onShowObject?.('Produto Cadastrado', 'Produto', inserted as any);
     }
 
     if (savedId) await persistFicha(String(savedId));
@@ -262,11 +259,6 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, onShowObject, produ
     if (error) { toast.error('Erro ao atualizar estoque', { description: error.message }); return; }
 
     toast.success(`Produção registrada: +${produzirQty} ${produto.nome}`);
-    onShowObject?.('Produção Registrada', 'OrdemProducao', {
-      produto: produto.nome, quantidade: produzirQty,
-      novo_estoque_produto: novoEstoqueProd,
-      insumos_baixados: ficha.length,
-    });
     // Refresh material list to get updated stock
     const { data: mpsRes } = await supabase.from('materias_primas').select('*').order('nome');
     setMaterias((mpsRes as any) ?? []);
@@ -473,4 +465,4 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, onShowObject, produ
       </DialogContent>
     </Dialog>
   );
-};
+};
