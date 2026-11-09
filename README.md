@@ -192,7 +192,9 @@ supabase functions deploy create-user --project-ref SEU-PROJETO
 | `pedidos` | Pedidos e status |
 | `pedidos_itens` | Produtos de cada pedido |
 | `produtos` | Produtos finais, preços e estoque |
-| `categorias` | Categorias de produtos |
+| `categorias` | Categorias do cardápio (Brigadeiros, Brownies, Biscoitos, Presentes) e do cadastro de produtos |
+| `cardapio_itens` | Itens à venda na loja (`/comprar`): categoria, nome, preço, disponibilidade e destaque |
+| `sabores` | Sabores de brigadeiro exibidos na loja |
 | `materias_primas` | Insumos e estoque |
 | `fichas_tecnicas` | Insumos usados em cada produto |
 | `movimentacoes_estoque` | Histórico de movimentações |
