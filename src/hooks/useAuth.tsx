@@ -17,7 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   isBypass: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, nome: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, nome: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = useCallback<AuthContextValue['signUp']>(async (email, password, nome) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -128,7 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: { nome },
       },
     });
-    return { error: error?.message ?? null };
+    // Sem sessão (e sem erro) => Supabase exige confirmação por e-mail antes de logar.
+    return { error: error?.message ?? null, needsConfirmation: !error && !data.session };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -192,4 +193,4 @@ export const ProtectedRoute: React.FC<{
     return null;
   }
   return <>{children}</>;
-};
+};
