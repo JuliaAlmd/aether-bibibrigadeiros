@@ -214,17 +214,17 @@ O login usa e-mail e senha pelo Supabase Auth. As contas podem ser criadas de du
 | Tela de cadastro | `/signup` | Conforme a configuração do Supabase | `funcionario` |
 | Configurações | `/configuracoes` | Não precisa | Escolhido por quem cria |
 
-| Tela | Rota | `funcionario` | `admin` | `master` |
-|---|---|---|---|---|
-| Clientes | `/clientes` | Sim | Sim | Sim |
-| Pedidos | `/pedidos` | Sim | Sim | Sim |
-| Perfil | `/perfil` | Sim | Sim | Sim |
-| Estoque | `/estoque` | – | Sim | Sim |
-| Matérias-Primas | `/materias-primas` | – | Sim | Sim |
-| Dashboard | `/dashboard` | – | – | Sim |
-| Relatórios | `/relatorios` | – | – | Sim |
-| Configurações | `/configuracoes` | – | – | Sim |
-| Loja | `/comprar` | – | – | Sim |
+| Tela | Rota | `cliente` | `funcionario` | `admin` | `master` |
+|---|---|---|---|---|---|
+| Clientes | `/clientes` | – | Sim | Sim | Sim |
+| Pedidos | `/pedidos` | – | Sim | Sim | Sim |
+| Perfil | `/perfil` | – | Sim | Sim | Sim |
+| Estoque | `/estoque` | – | – | Sim | Sim |
+| Matérias-Primas | `/materias-primas` | – | – | Sim | Sim |
+| Dashboard | `/dashboard` | – | – | – | Sim |
+| Relatórios | `/relatorios` | – | – | – | Sim |
+| Configurações | `/configuracoes` | – | – | – | Sim |
+| Loja | `/comprar` | Sim | – | – | Sim |
 
 Contas sem nível definido são levadas para `/acesso-pendente`. As rotas ficam em [`src/App.tsx`](src/App.tsx), e o menu, em [`src/components/Sidebar.tsx`](src/components/Sidebar.tsx). Esses controles só organizam a interface: a proteção dos dados depende das políticas de RLS no Supabase.
 
