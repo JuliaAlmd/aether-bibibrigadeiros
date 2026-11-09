@@ -76,6 +76,10 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) =
   const { user, isBypass } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categorias, setCategorias] = useState<{ id: number; nome: string }[]>([]);
+  const [cardapioItens, setCardapioItens] = useState<
+    { id: number; nome: string; categoria_id: number | null; preco: number; produto_id: number | null }[]
+  >([]);
+  const [cardapioItemId, setCardapioItemId] = useState<string>('');
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [ficha, setFicha] = useState<FichaItem[]>([]);
   const [profileValorHora, setProfileValorHora] = useState(25);
@@ -97,12 +101,15 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) =
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const [catsRes, mpsRes] = await Promise.all([
+      const [catsRes, mpsRes, cardRes] = await Promise.all([
         supabase.from('categorias').select('id, nome').order('nome'),
         supabase.from('materias_primas').select('*').order('nome'),
+        supabase.from('cardapio_itens').select('id, nome, categoria_id, preco, produto_id').order('nome'),
       ]);
       setCategorias((catsRes.data as any) ?? []);
       setMaterias((mpsRes.data as any) ?? []);
+      setCardapioItens((cardRes.data as any) ?? []);
+      setCardapioItemId('');
 
       if (user && !isBypass) {
         const { data: prof } = await supabase
@@ -184,6 +191,10 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) =
   };
 
   const onSubmit = async (data: ProdutoFormData) => {
+    if (!isEdit && !cardapioItemId) {
+      toast.error('Selecione um item do cardápio.');
+      return;
+    }
     setIsSubmitting(true);
     const catId = data.categoria_id ? Number(data.categoria_id) : null;
     const catNome = categorias.find((c) => c.id === catId)?.nome ?? null;
@@ -209,6 +220,14 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) =
       const { data: inserted, error } = await supabase.from('produtos').insert(payload).select().single();
       if (error) { setIsSubmitting(false); toast.error('Erro ao salvar', { description: error.message }); return; }
       savedId = (inserted as any)?.id;
+      // Liga o item do cardápio ao produto recém-criado (controle de estoque)
+      if (cardapioItemId && savedId) {
+        const { error: linkErr } = await supabase.from('cardapio_itens')
+          .update({ produto_id: savedId }).eq('id', Number(cardapioItemId));
+        if (linkErr) {
+          toast.error('Produto criado, mas não foi possível ligar ao cardápio', { description: linkErr.message });
+        }
+      }
     }
 
     if (savedId) await persistFicha(String(savedId));
@@ -289,10 +308,40 @@ export const ProdutoDialog = ({ open, onOpenChange, onSaved, produto }: Props) =
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <TabsContent value="dados" className="space-y-4 mt-4">
-                <FormField control={form.control} name="nome" render={({ field }) => (
-                  <FormItem><FormLabel>Nome do Produto</FormLabel>
-                    <FormControl><Input placeholder="Ex: Bolo de Chocolate" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+                {isEdit ? (
+                  <FormField control={form.control} name="nome" render={({ field }) => (
+                    <FormItem><FormLabel>Produto</FormLabel>
+                      <FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                  )} />
+                ) : (
+                  <FormItem>
+                    <FormLabel>Item do cardápio</FormLabel>
+                    <FormControl>
+                      <select
+                        value={cardapioItemId}
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          setCardapioItemId(id);
+                          const it = cardapioItens.find((c) => String(c.id) === id);
+                          form.setValue('nome', it?.nome ?? '', { shouldValidate: true });
+                          if (it?.categoria_id != null) {
+                            form.setValue('categoria_id', String(it.categoria_id), { shouldValidate: true });
+                          }
+                          if (it?.preco != null) form.setValue('preco_venda', Number(it.preco));
+                        }}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      >
+                        <option value="">Selecione um item do cardápio...</option>
+                        {cardapioItens.filter((c) => c.produto_id == null).map((c) => (
+                          <option key={c.id} value={String(c.id)}>{c.nome}</option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      O produto é criado a partir de um item do cardápio e fica ligado a ele (controle de estoque).
+                    </p>
+                  </FormItem>
+                )}
                 <FormField control={form.control} name="categoria_id" render={({ field }) => (
                   <FormItem><FormLabel>Categoria</FormLabel>
                     <FormControl>
