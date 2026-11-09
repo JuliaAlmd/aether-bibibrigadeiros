@@ -192,12 +192,16 @@ supabase functions deploy create-user --project-ref SEU-PROJETO
 | `pedidos` | Pedidos e status |
 | `pedidos_itens` | Produtos de cada pedido |
 | `produtos` | Produtos finais, preços e estoque |
-| `categorias` | Categorias de produtos |
+| `categorias` | Categorias do cardápio (Brigadeiros, Brownies, Biscoitos, Presentes) e do cadastro de produtos |
+| `cardapio_itens` | Itens à venda na loja (`/comprar`): categoria, nome, preço, disponibilidade, destaque e `produto_id` (liga ao estoque em `produtos`) |
+| `sabores` | Sabores de brigadeiro exibidos na loja |
 | `materias_primas` | Insumos e estoque |
 | `fichas_tecnicas` | Insumos usados em cada produto |
 | `movimentacoes_estoque` | Histórico de movimentações |
 | `fornecedores` | Fornecedores |
 | `despesas` | Despesas |
+
+Ao finalizar um pedido na loja, a função `criar_pedido_loja` (no banco) acha/cria o cliente pelo e-mail, grava o pedido em `pedidos`/`pedidos_itens` e baixa o estoque dos itens que têm `produto_id`. Para ligar um item do cardápio a um produto: `update public.cardapio_itens set produto_id = <id> where nome = '<item>';`.
 
 **Status de pedido:** `Aguardando Pagamento`, `Confirmado`, `Em Preparo`, `Em Entrega`, `Entregue` e `Cancelado`.
 
@@ -214,17 +218,17 @@ O login usa e-mail e senha pelo Supabase Auth. As contas podem ser criadas de du
 | Tela de cadastro | `/signup` | Conforme a configuração do Supabase | `funcionario` |
 | Configurações | `/configuracoes` | Não precisa | Escolhido por quem cria |
 
-| Tela | Rota | `funcionario` | `admin` | `master` |
-|---|---|---|---|---|
-| Clientes | `/clientes` | Sim | Sim | Sim |
-| Pedidos | `/pedidos` | Sim | Sim | Sim |
-| Perfil | `/perfil` | Sim | Sim | Sim |
-| Estoque | `/estoque` | – | Sim | Sim |
-| Matérias-Primas | `/materias-primas` | – | Sim | Sim |
-| Dashboard | `/dashboard` | – | – | Sim |
-| Relatórios | `/relatorios` | – | – | Sim |
-| Configurações | `/configuracoes` | – | – | Sim |
-| Loja | `/comprar` | – | – | Sim |
+| Tela | Rota | `cliente` | `funcionario` | `admin` | `master` |
+|---|---|---|---|---|---|
+| Clientes | `/clientes` | – | Sim | Sim | Sim |
+| Pedidos | `/pedidos` | – | Sim | Sim | Sim |
+| Perfil | `/perfil` | – | Sim | Sim | Sim |
+| Estoque | `/estoque` | – | – | Sim | Sim |
+| Matérias-Primas | `/materias-primas` | – | – | Sim | Sim |
+| Dashboard | `/dashboard` | – | – | – | Sim |
+| Relatórios | `/relatorios` | – | – | – | Sim |
+| Configurações | `/configuracoes` | – | – | – | Sim |
+| Loja | `/comprar` | Sim | – | – | Sim |
 
 Contas sem nível definido são levadas para `/acesso-pendente`. As rotas ficam em [`src/App.tsx`](src/App.tsx), e o menu, em [`src/components/Sidebar.tsx`](src/components/Sidebar.tsx). Esses controles só organizam a interface: a proteção dos dados depende das políticas de RLS no Supabase.
 

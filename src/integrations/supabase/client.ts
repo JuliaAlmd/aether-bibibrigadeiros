@@ -15,4 +15,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-export type AppRole = 'funcionario' | 'admin' | 'master';
+export type AppRole = 'cliente' | 'funcionario' | 'admin' | 'master';
+
+/** Roles da equipe (acesso ao painel). `cliente` só acessa a loja. */
+export const STAFF_ROLES: AppRole[] = ['funcionario', 'admin', 'master'];

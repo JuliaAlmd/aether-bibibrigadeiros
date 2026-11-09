@@ -45,7 +45,7 @@ const SignUp = () => {
       return;
     }
     toast({ title: 'Conta criada', description: 'Bem-vindo ao Aether!' });
-    navigate('/dashboard');
+    navigate('/comprar');
   };
 
   return (

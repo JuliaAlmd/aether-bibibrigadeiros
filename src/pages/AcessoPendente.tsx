@@ -10,7 +10,10 @@ const AcessoPendente = () => {
   const email = (user as { email?: string } | null)?.email ?? '';
 
   useEffect(() => {
-    if (role) navigate(role === 'master' ? '/dashboard' : '/pedidos', { replace: true });
+    if (role) {
+      const target = role === 'master' ? '/dashboard' : role === 'cliente' ? '/comprar' : '/pedidos';
+      navigate(target, { replace: true });
+    }
   }, [role, navigate]);
 
   const handleLogout = async () => {
