@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCardapio } from '@/hooks/useCardapio';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -56,6 +57,7 @@ const OrderPage = () => {
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [carrinho, setCarrinho] = useState<CartItem[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
 
   const categoriaBrigadeiros = categorias.find((c) => c.nome.toLowerCase() === 'brigadeiros')?.id;
 
@@ -154,22 +156,40 @@ const OrderPage = () => {
     };
   }, []);
 
-  // Finalizar pedido
-  const finalizarPedido = () => {
-    if (carrinho.length === 0) return;
-    
+  // Finalizar pedido — grava em `pedidos` via função do banco (criar_pedido_loja)
+  const finalizarPedido = async () => {
+    if (carrinho.length === 0 || finalizando) return;
+
+    setFinalizando(true);
+    const p_itens = carrinho.map((it) => ({
+      cardapio_item_id: it.id,
+      quantidade: it.quantidade,
+    }));
+    const { data, error } = await supabase.rpc('criar_pedido_loja', { p_itens });
+    setFinalizando(false);
+
+    if (error) {
+      toast({
+        title: 'Não foi possível finalizar o pedido',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     toast({
-      title: "Pedido finalizado!",
-      description: "Seu pedido foi registrado com sucesso.",
+      title: 'Pedido realizado!',
+      description: `Seu pedido #${data} foi registrado com sucesso.`,
       action: (
         <Button variant="outline" size="sm">
           <Check className="h-4 w-4" /> Ok
         </Button>
       ),
     });
-    
+
     setCarrinho([]);
     setCarrinhoAberto(false);
+    refetch();
   };
 
   return (
@@ -449,8 +469,9 @@ const OrderPage = () => {
                   <Button 
                     className="w-full bg-confectionery-pink hover:bg-confectionery-pink/80 text-primary-foreground btn-hover"
                     onClick={finalizarPedido}
+                    disabled={finalizando}
                   >
-                    Finalizar Pedido <ArrowRight size={16} className="ml-2" />
+                    {finalizando ? 'Finalizando...' : <>Finalizar Pedido <ArrowRight size={16} className="ml-2" /></>}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -521,8 +542,9 @@ const OrderPage = () => {
                   <Button 
                     className="w-full bg-confectionery-pink hover:bg-confectionery-pink/80 text-primary-foreground btn-hover"
                     onClick={finalizarPedido}
+                    disabled={finalizando}
                   >
-                    Finalizar Pedido <ArrowRight size={16} className="ml-2" />
+                    {finalizando ? 'Finalizando...' : <>Finalizar Pedido <ArrowRight size={16} className="ml-2" /></>}
                   </Button>
                   <Button 
                     variant="outline" 
