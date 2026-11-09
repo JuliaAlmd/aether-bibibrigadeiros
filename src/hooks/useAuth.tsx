@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { Navigate } from 'react-router-dom';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, type AppRole } from '@/integrations/supabase/client';
 import { config } from '@/lib/config';
@@ -44,10 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoleUserId(userId);
       return;
     }
-    // Highest privilege wins: master > admin > funcionario
-    const priority: AppRole[] = ['master', 'admin', 'funcionario'];
+    // Highest privilege wins: master > admin > funcionario > cliente
+    const priority: AppRole[] = ['master', 'admin', 'funcionario', 'cliente'];
     const found = priority.find((r) => data.some((d) => d.role === r));
-    setRole(found ?? 'funcionario');
+    // Role desconhecida => sem acesso (nunca assume 'funcionario' por padrão)
+    setRole(found ?? null);
     setRoleUserId(userId);
   }, []);
 
@@ -122,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/comprar`,
         data: { nome },
       },
     });
@@ -172,6 +174,8 @@ export const ProtectedRoute: React.FC<{
     return null;
   }
   if (allow && role && !allow.includes(role)) {
+    // Cliente só tem a loja: qualquer outra rota leva de volta para /comprar
+    if (role === 'cliente') return <Navigate to="/comprar" replace />;
     return (
       <div className="min-h-screen flex items-center justify-center p-8 text-center">
         <div>
